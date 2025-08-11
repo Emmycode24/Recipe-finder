@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+
 import RecipeCard from "./recipecard";
 import RecipeModal from "./recipemodal";
+import SearchBar from "./searchbar";
 
 
 export default function App() {
@@ -8,17 +10,21 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState("");
   const [favorites, setFavorites] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Fetch recipes from API
   useEffect(() => {
     async function fetchRecipes() {
+      setLoading(true);
       try {
-        const res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${searchTerm}`);
+  let url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${searchTerm || 'a'}`;
+        const res = await fetch(url);
         const data = await res.json();
         setRecipes(data.meals || []);
       } catch (err) {
         console.error("Error fetching recipes:", err);
       }
+      setLoading(false);
     }
     fetchRecipes();
   }, [searchTerm]);
@@ -38,36 +44,7 @@ export default function App() {
   }
 
 
-function SearchBar({ searchTerm, onSearch }) {
-  const [input, setInput] = useState(searchTerm);
-
-  useEffect(() => {
-    setInput(searchTerm);
-  }, [searchTerm]);
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    onSearch(input);
-  }
-
-  return (
-    <form className="flex justify-center mt-6" onSubmit={handleSubmit}>
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Search recipes..."
-        className="border border-sky-500 rounded-lg px-4 py-2 w-80 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-      />
-      <button
-        type="submit"
-        className="ml-2 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition"
-      >
-        Search
-      </button>
-    </form>
-  );
-}
+// ...existing code...
 
 
  
@@ -78,28 +55,37 @@ function SearchBar({ searchTerm, onSearch }) {
         <h1 className="text-white text-3xl font-bold">Interactive Recipe Finder</h1>
       </header>
 
-     {/* Search */}
+      {/* Search */}
       <SearchBar searchTerm={searchTerm} onSearch={setSearchTerm} />
 
-      {/* Recipe Grid */}
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {recipes.length > 0 ? (
-            recipes.map((recipe) => (
-              <RecipeCard
-                key={recipe.idMeal}
-                image={recipe.strMealThumb}
-                title={recipe.strMeal}
-                description={recipe.strInstructions.slice(0, 80) + "..."}
-                isFavorite={favorites.some((fav) => fav.idMeal === recipe.idMeal)}
-                onFavorite={() => toggleFavorite(recipe)}
-                onView={() => setSelectedRecipe(recipe)}
-              />
-            ))
-          ) : (
-            <p className="text-gray-500 col-span-full text-center">No recipes found.</p>
-          )}
-        </div>
+      {/* Recipe Grid or Loading Spinner */}
+      <main className="max-w-7xl mx-auto px-6 py-10 min-h-[300px] flex items-center justify-center">
+        {loading ? (
+          <div className="flex justify-center items-center w-full h-64">
+            <span className="relative flex h-16 w-16">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-16 w-16 bg-emerald-500"> </span>
+            </span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+            {recipes.length > 0 ? (
+              recipes.map((recipe) => (
+                <RecipeCard
+                  key={recipe.idMeal}
+                  image={recipe.strMealThumb}
+                  title={recipe.strMeal}
+                  description={recipe.strInstructions.slice(0, 80) + "..."}
+                  isFavorite={favorites.some((fav) => fav.idMeal === recipe.idMeal)}
+                  onFavorite={() => toggleFavorite(recipe)}
+                  onView={() => setSelectedRecipe(recipe)}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500 col-span-full text-center">No recipes found.</p>
+            )}
+          </div>
+        )}
       </main>
     
      {/* Modal */}
